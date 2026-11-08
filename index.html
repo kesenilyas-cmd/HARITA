@@ -1,0 +1,642 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1b365d">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Gezi Rehberi">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Türkiye Gezi Rehberi</title>
+<style>
+:root{
+  --bg:#f4f6f9;--card:#fff;--ink:#1b2433;--mut:#6b778a;--line:#e1e6ee;
+  --navy:#1b365d;--accent:#c25b3d;--ok:#2f8f5b;--okbg:#e3f3ea;
+  --part:#f1c2b3;--none:#dde3ec;--nodata:#eceff4;--stroke:#fff;
+}
+@media (prefers-color-scheme:dark){
+  :root{--bg:#0f1520;--card:#182131;--ink:#e8edf5;--mut:#93a0b5;--line:#27334a;
+  --navy:#0f1d33;--accent:#e08566;--ok:#4cbf82;--okbg:#17352a;
+  --part:#7a3f2e;--none:#2b3850;--nodata:#1b2538;--stroke:#0f1520;}
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+header{position:sticky;top:0;z-index:20;background:var(--navy);color:#fff;padding:calc(env(safe-area-inset-top) + 10px) 16px 10px}
+.hrow{display:flex;align-items:center;gap:10px}
+header h1{font-size:18px;margin:0;flex:1;font-weight:700}
+.iconbtn{background:rgba(255,255,255,.14);border:0;color:#fff;width:40px;height:40px;border-radius:12px;font-size:20px;line-height:1}
+.hprog{font-size:13px;opacity:.9;margin-top:4px;display:flex;justify-content:space-between}
+.hbar{height:5px;border-radius:3px;background:rgba(255,255,255,.2);margin-top:6px;overflow:hidden}
+.hbar i{display:block;height:100%;background:#7fe0a8;width:0;transition:width .3s}
+main{padding:12px 16px calc(84px + env(safe-area-inset-bottom));max-width:720px;margin:0 auto}
+nav{position:fixed;left:0;right:0;bottom:0;z-index:20;display:flex;background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+nav button{flex:1;border:0;background:none;padding:10px 4px 8px;font-size:12px;color:var(--mut);display:flex;flex-direction:column;align-items:center;gap:2px}
+nav button b{font-size:21px;font-weight:400;line-height:1}
+nav button[aria-selected=true]{color:var(--accent);font-weight:700}
+.view{display:none}.view.on{display:block}
+
+/* harita */
+.mapwrap{position:relative;background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+#svg{display:block;width:100%;height:min(62vh,520px);touch-action:none;background:var(--card);user-select:none;-webkit-user-select:none}
+#svg path{stroke:var(--stroke);stroke-width:.7;stroke-linejoin:round;fill:var(--nodata);cursor:pointer;vector-effect:non-scaling-stroke}
+#svg path.p0{fill:var(--none)}
+#svg path.pp{fill:var(--part);fill:color-mix(in srgb,var(--accent) calc(var(--r)*75% + 18%),var(--none))}
+#svg path.pc{fill:var(--ok)}
+#svg path.sel{stroke:var(--ink);stroke-width:2}
+.zoom{position:absolute;right:10px;top:10px;display:flex;flex-direction:column;gap:6px}
+.zoom button{width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:var(--card);font-size:20px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;padding:10px 4px;font-size:13px;color:var(--mut)}
+.legend span{display:flex;align-items:center;gap:6px}
+.legend i{width:14px;height:14px;border-radius:4px;display:inline-block}
+.mapmsg{padding:40px 20px;text-align:center;color:var(--mut)}
+.btn{border:0;background:var(--accent);color:#fff;border-radius:12px;padding:11px 16px;font-weight:600}
+.btn.sec{background:var(--card);color:var(--ink);border:1px solid var(--line)}
+.btn.danger{background:#c0392b}
+.btn.block{display:block;width:100%;margin-top:10px;text-align:center}
+
+/* liste */
+.tools{position:sticky;top:var(--hh,84px);z-index:10;background:var(--bg);padding:4px 0 8px}
+.search{width:100%;padding:11px 14px;border-radius:12px;border:1px solid var(--line);background:var(--card)}
+.chips{display:flex;gap:8px;margin-top:8px}
+.chips button{flex:1;border:1px solid var(--line);background:var(--card);border-radius:20px;padding:7px 6px;font-size:14px}
+.chips button[aria-pressed=true]{background:var(--navy);color:#fff;border-color:var(--navy)}
+.city{background:var(--card);border:1px solid var(--line);border-radius:14px;margin:10px 0;overflow:hidden}
+.ch{width:100%;display:flex;align-items:center;gap:10px;border:0;background:none;padding:14px;text-align:left}
+.cn{flex:1;font-weight:700;font-size:15px}
+.cc{font-size:13px;color:var(--mut);font-variant-numeric:tabular-nums}
+.chev{width:10px;height:10px;border-right:2px solid var(--mut);border-bottom:2px solid var(--mut);transform:rotate(45deg);transition:transform .2s;margin-right:4px}
+.city.open .chev{transform:rotate(-135deg)}
+.bar{height:3px;background:var(--line)}.bar i{display:block;height:100%;background:var(--ok)}
+.cbody{padding:4px 0 12px}
+.cat{padding:10px 14px 4px;font-size:12px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--accent)}
+.it{display:flex;align-items:center;gap:12px;padding:8px 8px 8px 14px;min-height:48px;border-top:1px solid var(--line)}
+.chk{flex:none;width:28px;height:28px;border-radius:8px;border:2px solid var(--mut);background:none;color:transparent;font-size:18px;line-height:1;font-weight:700;display:grid;place-items:center;padding:0}
+.it.done .chk{background:var(--ok);border-color:var(--ok);color:#fff}
+.tx{flex:1;min-width:0}
+.nm{word-break:break-word}
+.it.done .nm{color:var(--mut);text-decoration:line-through;text-decoration-color:var(--mut)}
+.nt{font-size:13px;color:var(--mut);margin-top:1px;word-break:break-word}
+.more{flex:none;width:40px;height:40px;border:0;background:none;color:var(--mut);font-size:22px;border-radius:10px}
+.addrow{display:grid;grid-template-columns:1fr auto;gap:8px;padding:12px 14px 0;border-top:1px dashed var(--line);margin-top:6px}
+.addrow input,.addrow select{padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);min-width:0;width:100%}
+.addrow .full{grid-column:1/-1}
+.addrow .btn{padding:10px 14px}
+.cfoot{padding:8px 14px 0;text-align:right}
+.cfoot button{border:0;background:none;color:var(--mut);font-size:13px;text-decoration:underline}
+.empty{text-align:center;color:var(--mut);padding:30px 10px}
+.addcity{margin-top:14px}
+
+/* özet */
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.stat b{display:block;font-size:26px;line-height:1.1}.stat span{font-size:13px;color:var(--mut)}
+.sumrow{display:grid;grid-template-columns:1fr auto;gap:2px 10px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin-top:8px;width:100%;text-align:left}
+.sumrow .bar{grid-column:1/-1;border-radius:3px;margin-top:6px}
+.sumrow em{font-style:normal;color:var(--mut);font-size:13px}
+.sumsel{margin:14px 0 4px;width:100%;padding:10px;border-radius:12px;border:1px solid var(--line);background:var(--card)}
+
+/* sheet */
+#back{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:50;display:none}
+#sheet{position:fixed;left:0;right:0;bottom:0;z-index:51;background:var(--card);border-radius:20px 20px 0 0;padding:16px 16px calc(18px + env(safe-area-inset-bottom));max-height:88vh;overflow:auto;display:none;max-width:720px;margin:0 auto;box-shadow:0 -8px 30px rgba(0,0,0,.25)}
+#sheet h2{margin:0 0 4px;font-size:18px}
+#sheet label{display:block;font-size:13px;color:var(--mut);margin:12px 0 4px}
+#sheet input,#sheet textarea,#sheet select{width:100%;padding:11px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg)}
+#sheet textarea{min-height:70px;resize:vertical}
+.sub{color:var(--mut);font-size:14px}
+.row2{display:flex;gap:10px;margin-top:14px}.row2 .btn{flex:1}
+.menuitem{display:flex;gap:12px;align-items:center;width:100%;text-align:left;background:none;border:0;border-top:1px solid var(--line);padding:14px 2px;font-size:16px}
+.menuitem:first-of-type{border-top:0}
+.menuitem small{display:block;color:var(--mut);font-size:13px}
+#toast{position:fixed;left:50%;bottom:calc(90px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#222;color:#fff;padding:10px 16px;border-radius:12px;z-index:60;font-size:14px;max-width:88vw;display:none;text-align:center}
+</style>
+</head>
+<body>
+<header id="hd">
+  <div class="hrow"><h1>Türkiye Gezi Rehberi</h1><button class="iconbtn" id="menuBtn" aria-label="Menü">⋮</button></div>
+  <div class="hprog"><span id="hp1"></span><span id="hp2"></span></div>
+  <div class="hbar"><i id="hbar"></i></div>
+</header>
+<main>
+  <section class="view" id="v-harita">
+    <div class="mapwrap">
+      <div id="mapHost"><div class="mapmsg">Harita yükleniyor…</div></div>
+    </div>
+    <div class="legend">
+      <span><i style="background:var(--ok)"></i>Tamamı gezildi</span>
+      <span><i style="background:var(--part)"></i>Kısmen</span>
+      <span><i style="background:var(--none)"></i>Henüz yok</span>
+      <span><i style="background:var(--nodata)"></i>Listede değil</span>
+    </div>
+    <div class="sub">İle dokun: ilerlemeyi gör, listeye git. İki parmakla yaklaştır.</div>
+  </section>
+
+  <section class="view" id="v-liste">
+    <div class="tools">
+      <input class="search" id="q" type="search" placeholder="Şehir veya yer ara…" autocomplete="off">
+      <div class="chips" id="chips">
+        <button data-f="all" aria-pressed="true">Hepsi</button>
+        <button data-f="todo" aria-pressed="false">Kalan</button>
+        <button data-f="done" aria-pressed="false">Gezilen</button>
+      </div>
+    </div>
+    <div id="list"></div>
+  </section>
+
+  <section class="view" id="v-ozet"></section>
+</main>
+<nav id="tabs">
+  <button data-t="harita" aria-selected="true"><b>🗺</b>Harita</button>
+  <button data-t="liste" aria-selected="false"><b>☰</b>Liste</button>
+  <button data-t="ozet" aria-selected="false"><b>📊</b>Özet</button>
+</nav>
+<div id="back"></div><div id="sheet" role="dialog" aria-modal="true"></div><div id="toast"></div>
+
+<script>
+"use strict";
+const DEFAULT=[{"name":"1. ADIYAMAN","cats":[{"name":"Tarihi & Doğal Eserler","items":[{"n":"Arsameia","d":false,"note":""},{"n":"Cendere Köprüsü","d":true,"note":""},{"n":"Kahta Çayı Şeytan Köprüsü","d":false,"note":""},{"n":"Karakuş Tümülüsü","d":true,"note":""},{"n":"Kaya Mezarları","d":false,"note":""},{"n":"Nemrut Dağı","d":true,"note":""},{"n":"Perre Antik Kenti","d":true,"note":""},{"n":"Yeni Kale Kenti (Kahta Kalesi)","d":true,"note":""}]},{"name":"Yerel Tatlar","items":[{"n":"Cevizli Biber","d":false,"note":""},{"n":"Yeşil Zeytin & Baharatlar","d":false,"note":""},{"n":"Zeytinyağı","d":false,"note":""}]}]},{"name":"2. AFYONKARAHİSAR","cats":[{"name":"Öne Çıkan Gezi Noktaları","items":[]}]},{"name":"3. AĞRI","cats":[{"name":"Öne Çıkan Gezi Noktaları","items":[{"n":"Ağrı Dağı Milli Parkı","d":false,"note":""},{"n":"Ahmedi Hanı Türbesi","d":true,"note":""},{"n":"Diyadin Kanyonu","d":true,"note":""},{"n":"Diyadin Kaplıcaları","d":true,"note":""},{"n":"Doğu Beyazıt Kalesi","d":true,"note":""},{"n":"İshak Paşa Sarayı","d":true,"note":""},{"n":"Korhan Meteor Çukuru","d":false,"note":""},{"n":"Nuhun Gemisi","d":true,"note":""},{"n":"Sarıçavuş Meteor Çukuru","d":false,"note":""}]}]},{"name":"4. AKSARAY","cats":[{"name":"Öne Çıkan Gezi Noktaları","items":[]}]},{"name":"5. AMASYA","cats":[{"name":"Öne Çıkan Gezi Noktaları","items":[{"n":"Amasya Arkeoloji Müzesi","d":false,"note":""},{"n":"Amasya Bimarhanesi (Sabuncuoğlu Şerefeddin Tıp ve Cerrahi Tarihi Müzesi)","d":false,"note":""},{"n":"Amasya Kalesi (Harsena Kalesi)","d":false,"note":""},{"n":"Amasya Yalıboyu Evleri","d":false,"note":""},{"n":"Aynalı Mağara","d":false,"note":""},{"n":"Borabay Gölü","d":false,"note":""},{"n":"Ferhat ile Şirin Aşıklar Müzesi","d":false,"note":""},{"n":"Kapı Ağa Medresesi","d":false,"note":""},{"n":"Pontus Kralları Kaya Mezarları","d":false,"note":""},{"n":"Saraydüzü Kışlası Binası (Milli Mücadele Müzesi)","d":false,"note":""}]}]},{"name":"6. ANKARA","cats":[{"name":"Öne Çıkan Gezi Noktaları","items":[{"n":"Anadolu Medeniyetleri Müzesi","d":false,"note":""},{"n":"Anıtkabir","d":false,"note":""},{"n":"Ankara Kalesi","d":false,"note":""},{"n":"Asarlık Tepeler Milli Parkı (Nallıhan)","d":false,"note":""},{"n":"Beypazarı Tarihi Evleri / Beypazarı","d":false,"note":""},{"n":"Çayırhan Gökkuşağı Tepeleri (Nallıhan)","d":false,"note":""},{"n":"Duatepe Anıtı (Polatlı)","d":false,"note":""},{"n":"Fosil Ormanı (Soğuksu)","d":false,"note":""},{"n":"Gordion Antik Kenti / Gordion Kalesi / Gordion Müzesi (Polatlı)","d":false,"note":""},{"n":"Hamamönü Tarihi Ankara Evleri","d":false,"note":""},{"n":"İnönü Mağaraları","d":false,"note":""},{"n":"Kartaltepe Mehmetçik Anıtı","d":false,"note":""},{"n":"Kurtuluş Savaşı Müzesi (1. TBMM)","d":false,"note":""},{"n":"Midas Tumulusu","d":false,"note":""},{"n":"Nallıhan Kuş Cenneti (Nallıhan)","d":false,"note":""},{"n":"Roma Hamamı / Antik Kent","d":false,"note":""},{"n":"Tulumtaş Mağarası (Gölbaşı)","d":false,"note":""},{"n":"Ulucanlar Cezaevi Müzesi","d":false,"note":""}]}]},{"name":"7. ANTALYA","cats":[{"name":"Tarihi Mekanlar & Antik Kentler","items":[{"n":"Alanya Kalesi","d":false,"note":""},{"n":"Apollon Tapınağı","d":false,"note":""},{"n":"Arykonda Antik Kenti","d":false,"note":""},{"n":"Aspendos Antik Kenti","d":false,"note":""},{"n":"Hıdırlık Kulesi","d":false,"note":""},{"n":"Kaleiçi","d":false,"note":""},{"n":"Karatay Medresesi","d":false,"note":""},{"n":"Olympos Antik Kenti","d":false,"note":""},{"n":"Patara","d":false,"note":""},{"n":"Perge","d":false,"note":""},{"n":"Side Antik Kenti","d":false,"note":""},{"n":"Silyon Antik Kenti","d":false,"note":""}]},{"name":"Doğal Güzellikler & Kanyonlar","items":[{"n":"Aşıklar Mağarası","d":false,"note":""},{"n":"Çıralı Yanartaş","d":false,"note":""},{"n":"Damlataş (Alanya)","d":false,"note":""},{"n":"Dim Mağarası","d":false,"note":""},{"n":"Doğal Havuzlar Kanyonu","d":false,"note":""},{"n":"Düden Şelalesi","d":false,"note":""},{"n":"Köprülü Kanyon","d":false,"note":""},{"n":"Kurşunlu Şelalesi","d":false,"note":""},{"n":"Manavgat Şelalesi","d":false,"note":""},{"n":"Tilkiler Mağarası","d":false,"note":""},{"n":"Yalancıboğaz","d":false,"note":""}]},{"name":"Müzeler","items":[{"n":"Antalya Müzesi","d":false,"note":""}]}]},{"name":"8. ARDAHAN","cats":[{"name":"Öne Çıkan Gezi Noktaları","items":[]}]},{"name":"9. ARTVİN","cats":[{"name":"Tarihi ve Doğal Güzellikler","items":[{"n":"Aralık Köyü Köprüsü","d":true,"note":""},{"n":"Ardanuç Kalesi","d":true,"note":""},{"n":"Artvin Kalesi (Gidilmiyor)","d":true,"note":""},{"n":"Atatepe","d":false,"note":""},{"n":"Borçka Karagöl Tabiat Parkı","d":true,"note":""},{"n":"Cehennem Deresi Kanyonu","d":false,"note":""},{"n":"Çifte Köprü","d":false,"note":""},{"n":"Doliskhane Kilisesi (Gittik, görmeden döndük)","d":true,"note":""},{"n":"Dörtkilise Manastırı (Yusufeli)","d":false,"note":""},{"n":"Hatila Vadisi Cam Teras","d":true,"note":""},{"n":"Karagöl","d":true,"note":""},{"n":"Mençuna Şelalesi","d":true,"note":""},{"n":"Petrek Kalesi (Peterek Kalesi) (Yusufeli)","d":false,"note":""},{"n":"Şavşat Kalesi","d":true,"note":""},{"n":"Şavşat Seyir Tepesi","d":true,"note":""}]}]},{"name":"10. AYDIN","cats":[{"name":"Öne Çıkan Gezi Noktaları","items":[]}]},{"name":"11. BALIKESİR","cats":[{"name":"Öne Çıkan Gezi Noktaları","items":[]}]},{"name":"12. BARTIN","cats":[{"name":"Öne Çıkan Gezi Noktaları","items":[]}]},{"name":"13. BATMAN","cats":[{"name":"Öne Çıkan Gezi Noktaları","items":[]}]},{"name":"14. BAYBURT","cats":[{"name":"Öne Çıkan Gezi Noktaları","items":[]}]},{"name":"15. BİLECİK","cats":[{"name":"Osmaneli","items":[{"n":"Ayayorgi Kilisesi","d":true,"note":""},{"n":"Eski Evler","d":true,"note":""},{"n":"Rüstem Paşa Cami","d":true,"note":""},{"n":"Soner Bey'in Çiftliği (Gökören köyü kurtarılmayı bekleyen evler)","d":false,"note":""},{"n":"Şifalı Hamamlar (Prof. Dr. Yunus Söylet)","d":false,"note":""}]},{"name":"Vezirhan","items":[{"n":"Köprülü Mehmet Paşa Kervansarayı ve Camisi","d":false,"note":""}]},{"name":"Merkez & Pazaryeri","items":[{"n":"Hamsu Deresi","d":false,"note":""},{"n":"Kayı Boyu Parkı","d":false,"note":""},{"n":"Orhangazi Cami","d":false,"note":""},{"n":"Osmanlı Padişahları Tarih Şeridi","d":false,"note":""},{"n":"Osmanlı Tuğrası","d":false,"note":""},{"n":"Pelitözü Göleti & Lila Lavanta Bahçeleri","d":false,"note":""},{"n":"Saat Kulesi","d":false,"note":""},{"n":"Şeyh Edebali Türbesi","d":false,"note":""}]},{"name":"Söğüt","items":[{"n":"Ertuğrul Gazi Mescidi","d":false,"note":""},{"n":"Ertuğrul Gazi Türbesi","d":false,"note":""},{"n":"Metris Tepe Anıtı Şehitliği","d":false,"note":""},{"n":"Türk Büyükleri Abidesi","d":false,"note":""}]}]},{"name":"16. BİNGÖL","cats":[{"name":"Solhan Yüzen Adalar","items":[{"n":"Selçuklu Mezarlığı","d":false,"note":""},{"n":"Zag Mağaraları","d":false,"note":""}]}]},{"name":"17. BİTLİS","cats":[{"name":"Öne Çıkan Gezi Noktaları","items":[]}]},{"name":"18. BOLU","cats":[{"name":"Öne Çıkan Gezi Noktaları","items":[{"n":"Akkaya Travertenleri","d":false,"note":""},{"n":"Burj Al Babas (Mudurnu)","d":false,"note":""},{"n":"Muslar Mağaraları","d":false,"note":""},{"n":"Seben Gölü","d":false,"note":""},{"n":"Seben Kaya Evleri","d":false,"note":""}]}]},{"name":"19. BURDUR","cats":[{"name":"Öne Çıkan Gezi Noktaları","items":[]}]},{"name":"20. BURSA","cats":[{"name":"Öne Çıkan Gezi Noktaları","items":[]}]},{"name":"21. ÇANAKKALE","cats":[{"name":"Öne Çıkan Gezi Noktaları","items":[]}]},{"name":"22. ÇANKIRI","cats":[{"name":"Öne Çıkan Gezi Noktaları","items":[{"n":"Çankırı Kalesi","d":false,"note":""},{"n":"Çankırı Tuz Mağarası (Tuz Madeni)","d":false,"note":""},{"n":"Hüyük Yeraltı Şehri","d":false,"note":""},{"n":"Kalecik Kalesi (Ankara-Çankırı sınır hattı)","d":false,"note":""},{"n":"Sakaeli Kaya Mezarları","d":false,"note":""}]}]},{"name":"23. ÇORUM","cats":[{"name":"Öne Çıkan Gezi Noktaları","items":[{"n":"İncesu Kanyonu","d":false,"note":""},{"n":"Laçin Kapılıkaya Anıtsal Kaya Mezarı","d":false,"note":""},{"n":"Sapinuva Ören Yeri (Ortaköy)","d":false,"note":""}]}]},{"name":"24. DENİZLİ","cats":[{"name":"Öne Çıkan Gezi Noktaları","items":[]}]},{"name":"25. DİYARBAKIR","cats":[{"name":"Öne Çıkan Gezi Noktaları","items":[]}]},{"name":"26. DÜZCE","cats":[{"name":"Öne Çıkan Gezi Noktaları","items":[]}]},{"name":"27. EDİRNE","cats":[{"name":"Öne Çıkan Gezi Noktaları","items":[]}]},{"name":"28. ELAZIĞ","cats":[{"name":"Genel","items":[{"n":"Bağın & Golan Kaplıcaları","d":false,"note":""},{"n":"Elazığ Buzluk Mağarası","d":false,"note":""},{"n":"Elekçi Tarihi Ermeni Kilisesi (Elegöz Kilisesi) (Ağın)","d":false,"note":""},{"n":"Gözlü Çayır (Ağın)","d":false,"note":""},{"n":"Harput Kalesi, Harput Evleri, Dabakhane ve Tarihi Kilise","d":false,"note":""},{"n":"Keban Barajı Seyir Terası","d":true,"note":""},{"n":"Palu Kalesi","d":false,"note":""},{"n":"Pertek Kalesi","d":true,"note":""},{"n":"Saklıkapı & Karaleylek Kanyonları","d":true,"note":""},{"n":"Tahar Çayı ve Tahar Köprüsü (Ağın)","d":false,"note":""}]}]},{"name":"29. ERZİNCAN","cats":[{"name":"Öne Çıkan Gezi Noktaları","items":[{"n":"Ahmet Kutsi Tecer Kültür Evi (Kemaliye)","d":false,"note":""},{"n":"Altıntepe Höyüğü","d":false,"note":""},{"n":"Doğa Tarihi Müzesi (Prof. Dr. Ali Demirsoy) (Kemaliye)","d":false,"note":""},{"n":"Girlevik Şelalesi","d":false,"note":""},{"n":"Karanlık Kanyon & Kanyon Turu (Kemaliye)","d":false,"note":""},{"n":"Kemah Kalesi","d":false,"note":""},{"n":"Kemaliye Taş Yolu","d":false,"note":""},{"n":"Mama Hatun Türbesi ve Külliyesi (Tercan)","d":false,"note":""},{"n":"Recep Yazıcıoğlu Köprüsü (Kemaliye)","d":false,"note":""},{"n":"St. Gregory Manastırı (Çanpınar / Vank)","d":false,"note":""},{"n":"Sultan Melik Türbesi (Kemah)","d":false,"note":""}]}]},{"name":"30. ERZURUM","cats":[{"name":"Öne Çıkan Gezi Noktaları","items":[{"n":"Abdurrahman Gazi Türbesi","d":false,"note":""},{"n":"Aziziye Tabyası","d":false,"note":""},{"n":"Çifte Minareli Medrese","d":false,"note":""},{"n":"Dalan Göz/Dolangez Tabyası","d":false,"note":""},{"n":"Erzurum Kalesi","d":false,"note":""},{"n":"Erzurum Kongre Binası","d":false,"note":""},{"n":"Gümüşlü Kümbet","d":false,"note":""},{"n":"Haho Manastırı (Tashat Manastırı) (Tortum)","d":false,"note":""},{"n":"Ilıca Kaplıcaları","d":false,"note":""},{"n":"Kırk Höyük","d":false,"note":""},{"n":"Mecidiye Tabyası","d":false,"note":""},{"n":"Nene Hatun Heykeli / Milli Parkı","d":false,"note":""},{"n":"Oltu Gökkuşağı Tepeleri","d":false,"note":""},{"n":"Oltu Kalesi","d":false,"note":""},{"n":"Öşvank Kilisesi (Öşv Manastırı) (Uzundere)","d":false,"note":""},{"n":"Pasinler Kalesi & Peri Bacaları","d":false,"note":""},{"n":"Pasinler Şehitler Anıtı","d":false,"note":""},{"n":"Saat Kulesi","d":false,"note":""},{"n":"Tarihi Erzurum Evleri","d":false,"note":""},{"n":"Tortum Kalesi","d":false,"note":""},{"n":"Tortum Şelalesi","d":false,"note":""},{"n":"Üç Kümbetler","d":false,"note":""},{"n":"Yakutiye Medresesi","d":false,"note":""}]}]},{"name":"31. ESKİŞEHİR","cats":[{"name":"Tarihi & Kültürel Alanlar","items":[{"n":"Alaaddin Cami","d":false,"note":""},{"n":"Arasta Çarşısı","d":true,"note":""},{"n":"El Sanatları Çarşısı (Atlıhan)","d":true,"note":""},{"n":"Kurşunlu Cami","d":true,"note":""},{"n":"Nasreddin Hoca Evi & Parkı","d":true,"note":""},{"n":"Odunpazarı Evleri","d":true,"note":""},{"n":"Osmanlı Evi","d":true,"note":""},{"n":"Sivrihisar Kurtuluş Müzesi","d":true,"note":""},{"n":"Surp Yerrotutyun Kilisesi (Ermeni Kilisesi)","d":false,"note":""},{"n":"Şeyh Edebali Türbesi","d":false,"note":""},{"n":"Ulu Cami (Ahşap Cami - 67 direk, kubbesiz)","d":true,"note":""}]},{"name":"Müzeler","items":[{"n":"Açık Hava Müzesi","d":false,"note":""},{"n":"Ahşap Müzesi","d":false,"note":""},{"n":"Bilim Müzesi / Bilim ve Deney Merkezi","d":true,"note":""},{"n":"Cam Sanatları Müzesi","d":true,"note":""},{"n":"Cumhuriyet Tarihi Müzesi","d":false,"note":""},{"n":"Devrim Otomobili","d":false,"note":""},{"n":"Eskişehir Eti Arkeoloji Müzesi","d":false,"note":""},{"n":"Eti Arkeoloji Müzesi / Yoğurtçupazarı","d":false,"note":""},{"n":"Havacılık Müzesi","d":false,"note":""},{"n":"Kent Belleği Müzesi","d":false,"note":""},{"n":"Lületaşı Müzesi","d":false,"note":""},{"n":"Mumya Müzesi","d":true,"note":""},{"n":"Odunpazarı Modern Müzesi (OMM)","d":true,"note":""}]},{"name":"Parklar & Eğlence Alanları","items":[{"n":"Akvaryum","d":false,"note":""},{"n":"Aşk Adası","d":true,"note":""},{"n":"Gölet","d":false,"note":""},{"n":"Hayvanat Bahçesi","d":true,"note":""},{"n":"Kent Park","d":false,"note":""},{"n":"Masal Şatosu","d":true,"note":""},{"n":"Porsuk Çayı'nda Gondol Turu","d":false,"note":""},{"n":"Sazova Parkı","d":false,"note":""},{"n":"Şelale Park","d":true,"note":""}]}]},{"name":"32. GAZİANTEP","cats":[{"name":"Öne Çıkan Gezi Noktaları","items":[{"n":"Altınözü Cami","d":false,"note":""},{"n":"Gelin Dağı","d":false,"note":""},{"n":"Nekropol Alanları","d":false,"note":""},{"n":"Zeugma Antik Kenti","d":false,"note":""}]}]},{"name":"33. GİRESUN","cats":[{"name":"Tarihi ve Doğal Güzellikler","items":[{"n":"Bedrama Kalesi","d":true,"note":""},{"n":"Espiye Andoz Kalesi","d":true,"note":""},{"n":"Kuzalan Şelalesi","d":true,"note":""},{"n":"Kümbet Yaylası","d":true,"note":""},{"n":"Mavi Göl","d":true,"note":""},{"n":"Meryem Ana Manastırı","d":true,"note":""},{"n":"Şebinkarahisar Kalesi","d":true,"note":""}]}]},{"name":"34. GÜMÜŞHANE","cats":[{"name":"Öne Çıkan Gezi Noktaları","items":[]}]},{"name":"35. HAKKÂRİ","cats":[{"name":"Öne Çıkan Gezi Noktaları","items":[]}]},{"name":"36. HATAY","cats":[{"name":"Tarihi & Kültürel Mekanlar","items":[{"n":"Asi Nehri","d":true,"note":""},{"n":"Beşikli Mağaraları","d":true,"note":""},{"n":"Dünyanın En Büyük Tek Parça Mozaiği (Müze Otel - 1050 m²)","d":true,"note":""},{"n":"En Yaşlı Zeytin Ağacı (Külliye içinde)","d":false,"note":""},{"n":"Ermeni Köyü (Vakıflı Köyü)","d":false,"note":""},{"n":"Eski Antakya Evleri Sokağı","d":true,"note":""},{"n":"Habib-i Neccar Cami","d":true,"note":""},{"n":"Harbiye Ağacı & Şelaleleri","d":false,"note":""},{"n":"Hatay Arkeoloji Müzesi","d":true,"note":""},{"n":"Hatay Expo Alanı","d":false,"note":""},{"n":"Kurtuluş Caddesi (Dünyanın ilk ışıklandırılan caddesi)","d":true,"note":""},{"n":"Musa Ağacı (Mızraklı / Samandağ)","d":false,"note":""},{"n":"Ortodoks Kilisesi","d":false,"note":""},{"n":"Payas Kalesi (Kral Shuppiluliuma Anıtı)","d":false,"note":""},{"n":"St. Pierre Kilisesi (Dünyanın ilk kiliselerinden)","d":true,"note":""},{"n":"Titus Tüneli","d":true,"note":""}]},{"name":"Plajlar","items":[{"n":"Çevlik Plajı (14 km uzunluğunda)","d":false,"note":""}]}]},{"name":"37. IĞDIR","cats":[{"name":"Öne Çıkan Gezi Noktaları","items":[{"n":"Harman Döver Kervansarayı","d":true,"note":""},{"n":"Karakoyunlu açık hava müzesi","d":true,"note":""},{"n":"Kayısı Bahçeleri","d":true,"note":""},{"n":"Kızıl Kayalar","d":true,"note":""},{"n":"Melekli Köyü","d":true,"note":""},{"n":"Tuz Mağaraları","d":true,"note":""}]}]},{"name":"38. ISPARTA","cats":[{"name":"Öne Çıkan Gezi Noktaları","items":[]}]},{"name":"39. İSTANBUL","cats":[{"name":"Öne Çıkan Gezi Noktaları","items":[]}]},{"name":"40. İZMİR","cats":[{"name":"Öne Çıkan Gezi Noktaları","items":[]}]},{"name":"41. KAHRAMANMARAŞ","cats":[{"name":"Öne Çıkan Gezi Noktaları","items":[]}]},{"name":"42. KARABÜK (Safranbolu)","cats":[{"name":"Öne Çıkan Gezi Noktaları","items":[{"n":"Bulak Mencilis Mağarası","d":true,"note":""},{"n":"Hıdırlık Tepesi","d":false,"note":""},{"n":"İncekaya Su Kemeri","d":true,"note":""},{"n":"Kristal Teras (İncekaya Kanyonu)","d":true,"note":""},{"n":"Safranbolu Saat Kulesi & Kent Tarihi Müzesi","d":false,"note":""},{"n":"Safranbolu Tarihi Çarşı & Eski Konaklar","d":false,"note":""},{"n":"Ters Ev","d":true,"note":"El yazısıyla eklendi"},{"n":"Yenice Ormanları & Şeker Kanyonu","d":true,"note":"El yazısı notu: (Tokat Kanyonu)"},{"n":"Yörük Köyü","d":false,"note":""}]}]},{"name":"43. KARAMAN","cats":[{"name":"Öne Çıkan Gezi Noktaları","items":[]}]},{"name":"44. KARS","cats":[{"name":"Öne Çıkan Gezi Noktaları","items":[{"n":"Ani Harabeleri","d":true,"note":""},{"n":"İlbeyoğlu Muaradiye Hamamı","d":true,"note":""},{"n":"Kars kalesi","d":true,"note":""},{"n":"Mazlum Ağa Hamamı","d":true,"note":""},{"n":"Şeytan Kalesi","d":true,"note":""}]}]},{"name":"45. KASTAMONU","cats":[{"name":"Öne Çıkan Gezi Noktaları","items":[{"n":"Ayonak Kazan Kaya Kanyonu","d":false,"note":""},{"n":"Gideros Koyu (Cide)","d":false,"note":""},{"n":"Horma Kanyonu & Ahşap Yürüyüş Yolu","d":true,"note":""},{"n":"Ilgarini Mağarası","d":false,"note":""},{"n":"Kastamonu Arkeoloji Müzesi","d":false,"note":""},{"n":"Kastamonu Kalesi","d":true,"note":""},{"n":"Kastamonu Saat Kulesi","d":false,"note":""},{"n":"Mahmut Bey Cami (Çatalkaya Köyü)","d":false,"note":""},{"n":"Şerife Bacı Anıtı","d":false,"note":""},{"n":"Valla Kanyonu (Pınarbaşı)","d":true,"note":""}]}]},{"name":"46. KAYSERİ","cats":[{"name":"Öne Çıkan Gezi Noktaları","items":[{"n":"Kapuzbaşı Şelalesi (Yahyalı)","d":false,"note":""}]}]},{"name":"47. KIRIKKALE","cats":[{"name":"Öne Çıkan Gezi Noktaları","items":[]}]},{"name":"48. KIRKLARELİ","cats":[{"name":"Öne Çıkan Gezi Noktaları","items":[]}]},{"name":"49. KIRŞEHİR","cats":[{"name":"Öne Çıkan Gezi Noktaları","items":[]}]},{"name":"50. KİLİS","cats":[{"name":"Öne Çıkan Gezi Noktaları","items":[]}]},{"name":"51. KOCAELİ","cats":[{"name":"Öne Çıkan Gezi Noktaları","items":[]}]},{"name":"52. KONYA","cats":[{"name":"Öne Çıkan Gezi Noktaları","items":[{"n":"Sultan II. Alaaddin Keykubat Kümbeti","d":false,"note":""}]}]},{"name":"53. KÜTAHYA","cats":[{"name":"Öne Çıkan Gezi Noktaları","items":[]}]},{"name":"54. MALATYA","cats":[{"name":"Öne Çıkan Gezi Noktaları","items":[{"n":"Arslantepe Höyüğü","d":true,"note":""},{"n":"Kudret Havuzu","d":true,"note":""},{"n":"Levent Vadisi Seyir Terası","d":true,"note":""},{"n":"Somuncu Baba Türbesi ve Külliyesi","d":true,"note":""},{"n":"Tohma Kanyonu & Günpınar Şelalesi","d":true,"note":""}]}]},{"name":"55. MANİSA","cats":[{"name":"Öne Çıkan Gezi Noktaları","items":[]}]},{"name":"56. MARDİN","cats":[{"name":"Öne Çıkan Gezi Noktaları","items":[]}]},{"name":"57. MERSİN & ADANA ÇEVRESİ","cats":[{"name":"Tarihi Yapılar & Antik Kentler","items":[{"n":"Anavarza Antik Kenti","d":false,"note":""},{"n":"Anemurium Antik Kenti","d":false,"note":""},{"n":"Ayas - Agora","d":false,"note":""},{"n":"Azize Tecla Kilisesi","d":false,"note":""},{"n":"Belenkeşlik Kalesi","d":false,"note":""},{"n":"Dağpazarı Kilisesi","d":false,"note":""},{"n":"Gülek Kalesi","d":false,"note":""},{"n":"Hz. Mikdat Camii (Muğdat Camii)","d":false,"note":""},{"n":"Kozan Kalesi","d":false,"note":""},{"n":"Magarsus Antik Kenti (Karataş)","d":false,"note":""},{"n":"Mamure Kalesi","d":false,"note":""},{"n":"Mezgit Kalesi","d":false,"note":""},{"n":"Misis Köprüsü (Yüreğir)","d":false,"note":""},{"n":"Olba Antik Kenti","d":false,"note":""},{"n":"Roma Yolu","d":false,"note":""},{"n":"Sabancı Seyhan Cami","d":false,"note":""},{"n":"Soli Pompeiopolis","d":false,"note":""},{"n":"Taşköprü","d":false,"note":""},{"n":"Uzuncaburç Kalıntıları","d":false,"note":""},{"n":"Varda Köprüsü (Alman Köprüsü - Karaisalı)","d":false,"note":""},{"n":"Yılan Kalesi","d":false,"note":""}]},{"name":"Tarsus Gezi Noktaları","items":[{"n":"Antik Yol","d":false,"note":""},{"n":"Danyal Peygamber Kabri","d":false,"note":""},{"n":"Donuktaş Mabedi","d":false,"note":""},{"n":"Eshab-ı Keyf Mağarası","d":false,"note":""},{"n":"Kırkkaşık Bedesteni","d":false,"note":""},{"n":"Kleopatra Kapısı","d":false,"note":""},{"n":"Kubat Paşa Medresesi","d":false,"note":""},{"n":"Saat Kulesi","d":false,"note":""},{"n":"St. Paul Anıt Kilisesi (Müzesi)","d":false,"note":""},{"n":"St. Paul Kuyusu","d":false,"note":""},{"n":"Tarihi Tarsus Evleri","d":false,"note":""},{"n":"Tarsus Müzesi","d":false,"note":""},{"n":"Tarsus Şelalesi","d":false,"note":""},{"n":"Taşkuyu Mağarası","d":false,"note":""}]},{"name":"Doğal Güzellikler & Plajlar","items":[{"n":"Akçakıl Koyu","d":false,"note":""},{"n":"Anamur Çayı","d":false,"note":""},{"n":"Cennet Cehennem Mağaraları","d":false,"note":""},{"n":"Çatalan Köprüsü","d":false,"note":""},{"n":"Gülek Boğazı","d":false,"note":""},{"n":"İlısu Şelalesi","d":false,"note":""},{"n":"Kanlıdivane","d":false,"note":""},{"n":"Kapıkaya Kanyonu","d":false,"note":""},{"n":"Kapuzbaşı Şelalesi (Aladağ, Kayseri)","d":false,"note":""},{"n":"Kayacı Vadisi","d":false,"note":""},{"n":"Köşekbükü Mağarası","d":false,"note":""},{"n":"Limonlu Çayı","d":false,"note":""},{"n":"Narlıkuyu","d":false,"note":""},{"n":"Yanıklı Mağarası","d":false,"note":""},{"n":"Yedi Uyurlar Mağarası","d":false,"note":""},{"n":"Yer Köprü Şelalesi","d":false,"note":""}]},{"name":"Müzeler","items":[{"n":"Mersin Arkeoloji Müzesi","d":false,"note":""}]}]},{"name":"58. MUĞLA","cats":[{"name":"Öne Çıkan Gezi Noktaları","items":[]}]},{"name":"59. MUŞ","cats":[{"name":"Öne Çıkan Gezi Noktaları","items":[]}]},{"name":"60. NEVŞEHİR","cats":[{"name":"Öne Çıkan Gezi Noktaları","items":[]}]},{"name":"61. NİĞDE","cats":[{"name":"Öne Çıkan Gezi Noktaları","items":[]}]},{"name":"62. ORDU","cats":[{"name":"Tarihi Konaklar ve Doğal Noktalar","items":[{"n":"Bolaman Kalesi","d":true,"note":""},{"n":"Haynat Adası (Teleferiğe binildi, pide yenildi)","d":true,"note":""},{"n":"Haznedaroğlu Konağı","d":true,"note":""},{"n":"Kurul Kalesi (Kapalı)","d":true,"note":""},{"n":"Ordu Şehir Merkezi  teleferiğe binildi pide yendi","d":true,"note":""},{"n":"Yason Kilisesi","d":true,"note":""}]}]},{"name":"63. OSMANİYE","cats":[{"name":"Öne Çıkan Gezi Noktaları","items":[]}]},{"name":"64. RİZE","cats":[{"name":"Yaylalar, Vadiler ve Tarihi Yapılar","items":[{"n":"Fırtına Deresi","d":true,"note":""},{"n":"Gilana Köprüsü","d":true,"note":""},{"n":"Gito Yaylası","d":true,"note":""},{"n":"Haremtepe (Çeçeva)","d":true,"note":"El yazısı notu: Geri döndük"},{"n":"Kıble Dağı Cami","d":true,"note":""},{"n":"Palovit Şelalesi","d":true,"note":""},{"n":"Zilkale","d":true,"note":""}]}]},{"name":"65. SAKARYA","cats":[{"name":"Öne Çıkan Gezi Noktaları","items":[]}]},{"name":"66. SAMSUN","cats":[{"name":"Öne Çıkan Gezi Noktaları","items":[{"n":"Amisos Tepesi & Kral Mezarları","d":false,"note":""},{"n":"Bandırma Vapuru Müzesi","d":true,"note":""},{"n":"Gazi Müzesi","d":false,"note":""},{"n":"Kızılırmak Deltası Kuş Cenneti","d":false,"note":""},{"n":"Onur Anıtı (Atatürk Heykeli - Belediye Parkı)","d":true,"note":""},{"n":"Samsun Arkeoloji ve Etnografya Müzesi","d":false,"note":""},{"n":"Şahinkaya Kanyonu (Vezirköprü)","d":false,"note":""},{"n":"Tekkeköy Mağaraları Arkeoloji Vadisi","d":false,"note":""}]}]},{"name":"67. SİİRT","cats":[{"name":"Öne Çıkan Gezi Noktaları","items":[]}]},{"name":"68. SİNOP","cats":[{"name":"Öne Çıkan Gezi Noktaları","items":[{"n":"Akliman","d":false,"note":""},{"n":"Balatlar Kilisesi","d":false,"note":""},{"n":"Boyabat Kalesi","d":true,"note":""},{"n":"Erfelek Tatlıca Şelaleleri","d":false,"note":""},{"n":"Hamsilos Koyu (Fiyord)","d":true,"note":""},{"n":"İnaltı Mağarası","d":false,"note":"El yazısıyla eklendi"},{"n":"İnceburun Feneri (Türkiye'nin En Kuzey Noktası)","d":true,"note":""},{"n":"Sinop Kalesi","d":false,"note":""},{"n":"Tarihi Sinop Cezaevi Müzesi","d":true,"note":""}]}]},{"name":"69. SİVAS","cats":[{"name":"Öne Çıkan Gezi Noktaları","items":[{"n":"Arkeoloji Müzesi","d":false,"note":""},{"n":"Çifte Minareli Medrese","d":false,"note":""},{"n":"Eğri Köprü","d":false,"note":""},{"n":"Emirhan Kayalıkları","d":false,"note":""},{"n":"Gök Medrese","d":false,"note":""},{"n":"Sivasdokya (Sivas Peri Bacaları)","d":false,"note":""},{"n":"Sivas Kalesi","d":false,"note":""},{"n":"Sivas Kongre Binası ve Kongre Meydanı","d":false,"note":""},{"n":"Surp Garabed Ermeni Kilisesi Kalıntıları","d":false,"note":""},{"n":"Şifaiye Medresesi","d":false,"note":""},{"n":"Taşhan","d":false,"note":""},{"n":"Ulu Camii & Ulu Camii Kalesi","d":false,"note":""}]}]},{"name":"70. ŞANLIURFA","cats":[{"name":"Öne Çıkan Gezi Noktaları","items":[]}]},{"name":"71. ŞIRNAK","cats":[{"name":"Öne Çıkan Gezi Noktaları","items":[]}]},{"name":"72. TEKİRDAĞ","cats":[{"name":"Öne Çıkan Gezi Noktaları","items":[]}]},{"name":"73. TOKAT","cats":[{"name":"Öne Çıkan Gezi Noktaları","items":[{"n":"Ballıca Mağarası","d":false,"note":""},{"n":"Komana Antik Kenti","d":false,"note":""},{"n":"Tokat Kalesi","d":false,"note":""},{"n":"Zile Kalesi","d":false,"note":""}]}]},{"name":"74. TRABZON","cats":[{"name":"Tarihi ve Turistik Noktalar","items":[{"n":"Çal Mağarası","d":true,"note":""},{"n":"Hapsiyas Köprüsü","d":true,"note":""},{"n":"Pileki Mağarası","d":true,"note":""},{"n":"Sümela Manastırı","d":true,"note":""},{"n":"Torul Kalesi Cam Teras","d":true,"note":""}]}]},{"name":"75. TUNCELİ","cats":[{"name":"Tunceli","items":[{"n":"Çemişgezek İni Delikleri (Tarihi Mağaralar)","d":false,"note":""},{"n":"Güzelköy Kırk Merdiven Şelaleleri","d":true,"note":""},{"n":"Halbori Gözeleri","d":false,"note":""},{"n":"Kale Camii (Çemişgezek)","d":false,"note":""},{"n":"Kutu Deresi Köprüsü","d":true,"note":""},{"n":"Munzur Gözeleri","d":true,"note":""},{"n":"Munzur Vadisi Milli Parkı","d":true,"note":""},{"n":"Örenönü Tabiat Parkı","d":false,"note":""},{"n":"Tahtaköprü","d":false,"note":""}]}]},{"name":"76. UŞAK","cats":[{"name":"Öne Çıkan Gezi Noktaları","items":[]}]},{"name":"77. VAN & BİNGÖL","cats":[{"name":"Van","items":[{"n":"Abbas Ağa Cami","d":true,"note":""},{"n":"Akdamar Adası & Akdamar Kilisesi","d":true,"note":""},{"n":"Çavuştepe Kalesi & Hoşap Kalesi","d":true,"note":""},{"n":"Halime Hatun Türbesi","d":true,"note":""},{"n":"Şeytan Köprüsü","d":false,"note":""},{"n":"Tarihi Van Şehri, Eski Van Evleri","d":true,"note":""},{"n":"Van Kalesi","d":true,"note":""},{"n":"Van Müzesi","d":true,"note":""}]}]},{"name":"78. YALOVA","cats":[{"name":"Öne Çıkan Gezi Noktaları","items":[]}]},{"name":"79. YOZGAT","cats":[{"name":"Öne Çıkan Gezi Noktaları","items":[]}]},{"name":"80. ZONGULDAK","cats":[{"name":"Öne Çıkan Gezi Noktaları","items":[]}]}];
+const KEY='gezi-rehberi-v1', GEOKEY='gezi-rehberi-harita-v1';
+const GEO_SOURCES=[
+  'harita/tr.json',
+  'https://raw.githubusercontent.com/cihadturhan/tr-geojson/master/geo/tr-cities-utf8.json',
+  'https://cdn.jsdelivr.net/gh/cihadturhan/tr-geojson@master/geo/tr-cities-utf8.json'
+];
+const $=(s,r=document)=>r.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid=()=>Math.random().toString(36).slice(2,9)+Date.now().toString(36).slice(-3);
+
+/* ---------- veri ---------- */
+let S;
+function fresh(){return{cities:DEFAULT.map(c=>({id:uid(),name:c.name,cats:c.cats.map(k=>({name:k.name,items:k.items.map(i=>({id:uid(),n:i.n,d:!!i.d,note:i.note||''}))}))}))}}
+function load(){
+  try{const r=localStorage.getItem(KEY);if(r){const o=JSON.parse(r);if(o&&Array.isArray(o.cities)){S=o;return}}}catch(e){}
+  S=fresh();
+}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){toast('Kaydedilemedi: tarayıcı depolaması dolu veya kapalı')}}
+const cityById=id=>S.cities.find(c=>c.id===id);
+function stats(c){let t=0,d=0;for(const k of c.cats)for(const i of k.items){t++;if(i.d)d++}return{t,d}}
+function totals(){let t=0,d=0;for(const c of S.cities){const s=stats(c);t+=s.t;d+=s.d}return{t,d}}
+
+/* ---------- yardımcılar ---------- */
+const TRMAP={'ı':'i','İ':'i','I':'i','ş':'s','Ş':'s','ğ':'g','Ğ':'g','ü':'u','Ü':'u','ö':'o','Ö':'o','ç':'c','Ç':'c','â':'a','Â':'a','î':'i','Î':'i','û':'u','Û':'u'};
+const norm=s=>String(s||'').replace(/[ıİIşŞğĞüÜöÖçÇâÂîÎûÛ]/g,m=>TRMAP[m]).toLowerCase().replace(/[^a-z]/g,'');
+const ALIAS={afyon:'afyonkarahisar',icel:'mersin',urfa:'sanliurfa',antep:'gaziantep',maras:'kahramanmaras',kmaras:'kahramanmaras',hakkari:'hakkari'};
+const provKey=n=>{const k=norm(n);return ALIAS[k]||k};
+function cityKeys(name){
+  const base=name.replace(/^\s*\d+\.\s*/,'').replace(/\(.*?\)/g,'');
+  return base.split('&').map(p=>provKey(p.replace(/çevresi/i,'').replace(/ÇEVRESİ/,''))).filter(Boolean);
+}
+function provToCity(){
+  const m={};
+  const single=S.cities.filter(c=>!c.name.includes('&')),multi=S.cities.filter(c=>c.name.includes('&'));
+  for(const c of single)for(const k of cityKeys(c.name))m[k]=c;
+  for(const c of multi)for(const k of cityKeys(c.name))if(!m[k])m[k]=c;
+  return m;
+}
+let toastT;function toast(t){const e=$('#toast');e.textContent=t;e.style.display='block';clearTimeout(toastT);toastT=setTimeout(()=>e.style.display='none',3200)}
+function sheet(html){const s=$('#sheet');s.innerHTML=html;s.style.display='block';$('#back').style.display='block';s.scrollTop=0;return s}
+function closeSheet(){$('#sheet').style.display='none';$('#back').style.display='none'}
+$('#back').addEventListener('click',closeSheet);
+
+/* ---------- üst ilerleme ---------- */
+function updateHeader(){
+  const {t,d}=totals();const p=t?Math.round(d/t*100):0;
+  $('#hp1').textContent=`${d} / ${t} yer gezildi`;$('#hp2').textContent=`%${p}`;$('#hbar').style.width=p+'%';
+}
+
+/* ---------- sekmeler ---------- */
+let tab='harita';
+function setTab(t){
+  tab=t;
+  document.querySelectorAll('.view').forEach(v=>v.classList.toggle('on',v.id==='v-'+t));
+  document.querySelectorAll('#tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.t===t));
+  if(t==='harita')renderMap();
+  if(t==='liste')renderList();
+  if(t==='ozet')renderSummary();
+  window.scrollTo(0,0);
+}
+$('#tabs').addEventListener('click',e=>{const b=e.target.closest('button');if(b)setTab(b.dataset.t)});
+function syncHH(){document.documentElement.style.setProperty('--hh',$('#hd').offsetHeight+'px')}
+addEventListener('resize',syncHH);
+
+/* ---------- LİSTE ---------- */
+const openSet=new Set();let filter='all',query='';
+const itemVisible=i=>filter==='all'||(filter==='done'?i.d:!i.d);
+function cityEl(c,filtering){
+  const st=stats(c);
+  const q=norm(query);
+  const cityMatch=q&&norm(c.name).includes(q);
+  const open=filtering?true:openSet.has(c.id);
+  const el=document.createElement('section');el.className='city'+(open?' open':'');el.dataset.id=c.id;
+  const pct=st.t?st.d/st.t*100:0;
+  let body='';
+  if(open){
+    body='<div class="cbody">';
+    let any=false;
+    for(const [ki,k] of c.cats.entries()){
+      const items=k.items.filter(i=>itemVisible(i)&&(!q||cityMatch||norm(i.n).includes(q)||norm(k.name).includes(q)));
+      if(filtering&&!items.length)continue;
+      any=true;
+      body+=`<div class="cat">${esc(k.name)}</div>`;
+      for(const i of items){
+        body+=`<div class="it${i.d?' done':''}" data-i="${i.id}"><button class="chk" aria-label="Gittim" aria-pressed="${i.d}">✓</button><div class="tx"><div class="nm">${esc(i.n)}</div>${i.note?`<div class="nt">${esc(i.note)}</div>`:''}</div><button class="more" aria-label="Düzenle">⋯</button></div>`;
+      }
+    }
+    if(!filtering){
+      const last=c.cats.length-1;
+      body+=`<form class="addrow" data-add>
+        <input name="n" placeholder="＋ Yeni yer ekle…" enterkeyhint="done" autocomplete="off" required>
+        <button class="btn" type="submit">Ekle</button>
+        <select name="k" class="full">${c.cats.map((k,ki)=>`<option value="${ki}"${ki===last?' selected':''}>${esc(k.name)}</option>`).join('')}<option value="new">＋ Yeni başlık…</option></select>
+        <input name="nk" class="full" placeholder="Yeni başlık adı" style="display:none" autocomplete="off">
+      </form>
+      <div class="cfoot"><button data-act="editcity">Şehri düzenle / sil</button></div>`;
+    }else if(!any){body+='<div class="empty">Eşleşen yer yok</div>'}
+    body+='</div>';
+  }
+  el.innerHTML=`<button class="ch" aria-expanded="${open}"><span class="cn">${esc(c.name)}</span><span class="cc">${st.d} / ${st.t}</span><span class="chev"></span></button><div class="bar"><i style="width:${pct}%"></i></div>${body}`;
+  return el;
+}
+function renderList(){
+  const host=$('#list');host.textContent='';
+  const filtering=!!query.trim()||filter!=='all';
+  const q=norm(query);
+  let n=0;
+  for(const c of S.cities){
+    if(filtering){
+      const cityMatch=q&&norm(c.name).includes(q);
+      const has=c.cats.some(k=>k.items.some(i=>itemVisible(i)&&(!q||cityMatch||norm(i.n).includes(q)||norm(k.name).includes(q))));
+      if(!has)continue;
+    }
+    host.appendChild(cityEl(c,filtering));n++;
+  }
+  if(!n)host.innerHTML='<div class="empty">Sonuç bulunamadı</div>';
+  if(!filtering){
+    const f=document.createElement('form');f.className='addcity addrow';f.dataset.addcity='1';f.style.border='0';
+    f.innerHTML='<input name="n" placeholder="＋ Yeni şehir ekle (örn. Rize)…" autocomplete="off" required><button class="btn" type="submit">Ekle</button>';
+    host.appendChild(f);
+  }
+}
+function refreshCity(id){
+  const old=$(`.city[data-id="${id}"]`);const c=cityById(id);
+  if(old&&c&&!(query.trim()||filter!=='all'))old.replaceWith(cityEl(c,false));else renderList();
+  updateHeader();
+}
+$('#q').addEventListener('input',e=>{query=e.target.value;renderList()});
+$('#chips').addEventListener('click',e=>{
+  const b=e.target.closest('button');if(!b)return;filter=b.dataset.f;
+  document.querySelectorAll('#chips button').forEach(x=>x.setAttribute('aria-pressed',x===b));renderList();
+});
+$('#list').addEventListener('click',e=>{
+  const cityNode=e.target.closest('.city');
+  if(e.target.closest('.ch')){
+    const id=cityNode.dataset.id;openSet.has(id)?openSet.delete(id):openSet.add(id);
+    refreshCity(id);
+    return;
+  }
+  if(e.target.closest('[data-act="editcity"]')){editCity(cityNode.dataset.id);return}
+  const row=e.target.closest('.it');
+  if(row&&cityNode){
+    const c=cityById(cityNode.dataset.id);
+    for(const k of c.cats){const it=k.items.find(i=>i.id===row.dataset.i);if(it){
+      if(e.target.closest('.more')){editItem(c,k,it);return}
+      it.d=!it.d;save();refreshCity(c.id);return}}
+  }
+});
+$('#list').addEventListener('change',e=>{
+  if(e.target.name==='k'){const f=e.target.form;f.nk.style.display=e.target.value==='new'?'block':'none';if(e.target.value==='new')f.nk.focus()}
+});
+$('#list').addEventListener('submit',e=>{
+  e.preventDefault();const f=e.target;
+  if(f.dataset.addcity){
+    const name=f.n.value.trim();if(!name)return;
+    const c={id:uid(),name:`${S.cities.length+1}. ${name.toLocaleUpperCase('tr-TR')}`,cats:[{name:'Öne Çıkan Gezi Noktaları',items:[]}]};
+    S.cities.push(c);openSet.add(c.id);save();renderList();updateHeader();toast('Şehir eklendi');
+    $(`.city[data-id="${c.id}"] input[name=n]`)?.focus();return;
+  }
+  const cityNode=f.closest('.city'),c=cityById(cityNode.dataset.id);
+  const name=f.n.value.trim();if(!name)return;
+  let k;
+  if(f.k.value==='new'){const kn=f.nk.value.trim();if(!kn){f.nk.focus();toast('Yeni başlık adını yaz');return}k={name:kn,items:[]};c.cats.push(k)}
+  else k=c.cats[+f.k.value]||c.cats[c.cats.length-1];
+  k.items.push({id:uid(),n:name,d:false,note:''});
+  save();refreshCity(c.id);
+  const nf=$(`.city[data-id="${c.id}"] form[data-add]`);
+  if(nf){nf.k.value=String(c.cats.indexOf(k));nf.n.focus()}
+});
+function editItem(c,k,it){
+  const s=sheet(`<h2>Yeri düzenle</h2><div class="sub">${esc(c.name)}</div>
+    <label>Yer adı</label><input id="e_n" value="${esc(it.n)}">
+    <label>Not</label><textarea id="e_note" placeholder="Not ekle…">${esc(it.note)}</textarea>
+    <label>Başlık</label><select id="e_k">${c.cats.map((x,i)=>`<option value="${i}"${x===k?' selected':''}>${esc(x.name)}</option>`).join('')}</select>
+    <div class="row2"><button class="btn danger" id="e_del">Sil</button><button class="btn" id="e_ok">Kaydet</button></div>`);
+  $('#e_ok',s).onclick=()=>{
+    const n=$('#e_n',s).value.trim();if(!n){toast('Ad boş olamaz');return}
+    it.n=n;it.note=$('#e_note',s).value.trim();
+    const nk=c.cats[+$('#e_k',s).value];
+    if(nk!==k){k.items.splice(k.items.indexOf(it),1);nk.items.push(it)}
+    save();closeSheet();refreshCity(c.id);
+  };
+  $('#e_del',s).onclick=()=>{if(confirm(`"${it.n}" silinsin mi?`)){k.items.splice(k.items.indexOf(it),1);save();closeSheet();refreshCity(c.id)}};
+}
+function editCity(id){
+  const c=cityById(id);
+  const s=sheet(`<h2>Şehri düzenle</h2>
+    <label>Şehir başlığı</label><input id="c_n" value="${esc(c.name)}">
+    <div class="sub" style="margin-top:8px">Haritada eşleşmesi için başlıkta ilin adı geçmeli (örn. "12. RİZE").</div>
+    <div class="row2"><button class="btn danger" id="c_del">Şehri sil</button><button class="btn" id="c_ok">Kaydet</button></div>`);
+  $('#c_ok',s).onclick=()=>{const n=$('#c_n',s).value.trim();if(!n)return;c.name=n;save();closeSheet();renderList()};
+  $('#c_del',s).onclick=()=>{if(confirm(`"${c.name}" ve içindeki tüm yerler silinsin mi?`)){S.cities=S.cities.filter(x=>x!==c);save();closeSheet();renderList();updateHeader()}};
+}
+function openCityInList(id){
+  openSet.add(id);query='';$('#q').value='';filter='all';
+  document.querySelectorAll('#chips button').forEach(x=>x.setAttribute('aria-pressed',x.dataset.f==='all'));
+  setTab('liste');
+  const el=$(`.city[data-id="${id}"]`);
+  if(el)setTimeout(()=>{const y=el.getBoundingClientRect().top+scrollY-($('#hd').offsetHeight+110);window.scrollTo({top:y,behavior:'smooth'})},30);
+}
+
+/* ---------- ÖZET ---------- */
+let sortMode='sira';
+function renderSummary(){
+  const {t,d}=totals();const done=S.cities.filter(c=>{const s=stats(c);return s.t&&s.d===s.t}).length;
+  let rows=S.cities.map(c=>({c,...stats(c)}));
+  if(sortMode==='kalan')rows.sort((a,b)=>(b.t-b.d)-(a.t-a.d));
+  if(sortMode==='gezilen')rows.sort((a,b)=>b.d-a.d);
+  if(sortMode==='acik')rows=rows.filter(r=>r.t&&r.d<r.t);
+  $('#v-ozet').innerHTML=`<div class="stats">
+    <div class="stat"><b>${t}</b><span>Toplam yer</span></div>
+    <div class="stat"><b>${d}</b><span>Gezilen</span></div>
+    <div class="stat"><b>${t-d}</b><span>Kalan</span></div>
+    <div class="stat"><b>${done}</b><span>Tamamlanan şehir</span></div></div>
+    <select class="sumsel" id="sortSel">
+      <option value="sira">Sıra: listedeki sırayla</option><option value="kalan">En çok kalan yer</option>
+      <option value="gezilen">En çok gezilen</option><option value="acik">Sadece tamamlanmamışlar</option></select>
+    ${rows.map(r=>`<button class="sumrow" data-id="${r.c.id}"><span><b>${esc(r.c.name)}</b></span><em>${r.d} / ${r.t}</em><div class="bar"><i style="width:${r.t?r.d/r.t*100:0}%"></i></div></button>`).join('')}`;
+  $('#sortSel').value=sortMode;
+}
+$('#v-ozet').addEventListener('change',e=>{if(e.target.id==='sortSel'){sortMode=e.target.value;renderSummary()}});
+$('#v-ozet').addEventListener('click',e=>{const b=e.target.closest('.sumrow');if(b)openCityInList(b.dataset.id)});
+
+/* ---------- HARİTA ---------- */
+let geoPaths=null,geoLoading=false,pz=null,selKey=null,vb0=null;
+function geoToPaths(gj){
+  if(!gj||gj.type==='Topology')throw new Error('TopoJSON desteklenmiyor');
+  const feats=gj.type==='FeatureCollection'?gj.features:gj.type==='Feature'?[gj]:[];
+  const polys=g=>!g?[]:g.type==='Polygon'?[g.coordinates]:g.type==='MultiPolygon'?g.coordinates:[];
+  let minx=1e9,maxx=-1e9,miny=1e9,maxy=-1e9;
+  for(const f of feats)for(const p of polys(f.geometry))for(const r of p)for(const pt of r){
+    if(pt[0]<minx)minx=pt[0];if(pt[0]>maxx)maxx=pt[0];if(pt[1]<miny)miny=pt[1];if(pt[1]>maxy)maxy=pt[1]}
+  if(!(maxx>minx))throw new Error('Geçersiz harita verisi');
+  const kx=Math.cos((miny+maxy)/2*Math.PI/180),K=100;
+  const out=[];
+  for(const f of feats){
+    const pr=f.properties||{};
+    const keys=['name','NAME','Name','il','IL','Il','ad','AD','adi','ADI','il_adi','IL_ADI','ILADI','NAME_1','shapeName','province','text'];
+    let nm=null;for(const k of keys)if(typeof pr[k]==='string'&&pr[k]){nm=pr[k];break}
+    if(!nm)for(const k in pr)if(typeof pr[k]==='string'){nm=pr[k];break}
+    if(!nm)continue;
+    let d='';
+    for(const p of polys(f.geometry))for(const r of p){
+      let last='';let s='';let n=0;
+      for(const pt of r){
+        const x=((pt[0]-minx)*kx*K).toFixed(1),y=((maxy-pt[1])*K).toFixed(1),cur=x+','+y;
+        if(cur===last)continue;last=cur;s+=(n++?'L':'M')+cur;
+      }
+      if(n>2)d+=s+'Z';
+    }
+    if(d)out.push({k:provKey(nm),name:nm,d});
+  }
+  if(out.length<70)throw new Error('Beklenen 81 il bulunamadı ('+out.length+')');
+  return {paths:out,w:(maxx-minx)*kx*K,h:(maxy-miny)*K};
+}
+async function loadGeo(){
+  if(geoPaths||geoLoading)return;
+  try{const c=localStorage.getItem(GEOKEY);if(c){geoPaths=JSON.parse(c);return}}catch(e){}
+  geoLoading=true;let err='';
+  for(const u of GEO_SOURCES){
+    try{
+      const r=await fetch(u);if(!r.ok)throw new Error('HTTP '+r.status);
+      geoPaths=geoToPaths(await r.json());
+      try{localStorage.setItem(GEOKEY,JSON.stringify(geoPaths))}catch(e){}
+      break;
+    }catch(e){err=String(e.message||e)}
+  }
+  geoLoading=false;
+  if(!geoPaths)throw new Error(err||'Harita yüklenemedi');
+}
+async function renderMap(){
+  const host=$('#mapHost');
+  if(!geoPaths){
+    host.innerHTML='<div class="mapmsg">Harita yükleniyor…</div>';
+    try{await loadGeo()}catch(e){
+      host.innerHTML=`<div class="mapmsg"><b>Harita verisi yüklenemedi</b><br><span class="sub">${esc(e.message)}<br>İnternet bağlantını kontrol et. Harita bir kez yüklenince telefonda saklanır.</span><br><button class="btn block" id="mapRetry">Tekrar dene</button></div>`;
+      $('#mapRetry').onclick=renderMap;return;
+    }
+  }
+  if(tab!=='harita')return;
+  const g=geoPaths,pm=provToCity();
+  const pad=20;vb0={x:-pad,y:-pad,w:g.w+2*pad,h:g.h+2*pad};
+  host.innerHTML=`<svg id="svg" viewBox="${vb0.x} ${vb0.y} ${vb0.w} ${vb0.h}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Türkiye il haritası"><g id="prov">${g.paths.map(p=>`<path data-k="${esc(p.k)}" d="${p.d}" fill-rule="evenodd"><title>${esc(p.name)}</title></path>`).join('')}</g></svg>
+  <div class="zoom"><button data-z="1.5" aria-label="Yakınlaştır">＋</button><button data-z="0.667" aria-label="Uzaklaştır">−</button><button data-z="0" aria-label="Sıfırla">⌂</button></div>`;
+  colorMap(pm);
+  pz=panZoom($('#svg'),vb0,k=>selectProv(k));
+  host.querySelector('.zoom').onclick=e=>{const b=e.target.closest('button');if(b)pz.zoom(+b.dataset.z)};
+  if(selKey)markSel();
+}
+function colorMap(pm){
+  pm=pm||provToCity();
+  document.querySelectorAll('#prov path').forEach(p=>{
+    const c=pm[p.dataset.k];p.removeAttribute('style');
+    if(!c){p.setAttribute('class','');return}
+    const s=stats(c);
+    if(!s.t){p.setAttribute('class','p0');return}
+    if(s.d===s.t){p.setAttribute('class','pc');return}
+    if(!s.d){p.setAttribute('class','p0');return}
+    p.setAttribute('class','pp');p.style.setProperty('--r',(s.d/s.t).toFixed(2));
+  });
+}
+function markSel(){
+  document.querySelectorAll('#prov path.sel').forEach(p=>p.classList.remove('sel'));
+  const p=$(`#prov path[data-k="${selKey}"]`);if(p){p.classList.add('sel');p.parentNode.appendChild(p)}
+}
+function selectProv(k){
+  if(!k)return;selKey=k;markSel();
+  const pm=provToCity(),c=pm[k],gp=geoPaths.paths.find(p=>p.k===k);
+  const title=gp?gp.name:k;
+  if(!c){
+    const s=sheet(`<h2>${esc(title)}</h2><div class="sub">Bu il listende yok.</div><button class="btn block" id="pAdd">Listeme ekle</button><button class="btn sec block" id="pClose">Kapat</button>`);
+    $('#pClose',s).onclick=closeSheet;
+    $('#pAdd',s).onclick=()=>{
+      const nc={id:uid(),name:`${S.cities.length+1}. ${title.toLocaleUpperCase('tr-TR')}`,cats:[{name:'Öne Çıkan Gezi Noktaları',items:[]}]};
+      S.cities.push(nc);save();closeSheet();colorMap();updateHeader();openCityInList(nc.id);toast('İl eklendi, yerleri ekleyebilirsin');
+    };
+    return;
+  }
+  const st=stats(c);
+  const s=sheet(`<h2>${esc(c.name)}</h2><div class="sub">${st.d} / ${st.t} yer gezildi</div><div class="bar" style="margin:12px 0;border-radius:3px"><i style="width:${st.t?st.d/st.t*100:0}%"></i></div><button class="btn block" id="pOpen">Listede aç</button><button class="btn sec block" id="pClose">Kapat</button>`);
+  $('#pOpen',s).onclick=()=>{closeSheet();openCityInList(c.id)};$('#pClose',s).onclick=closeSheet;
+}
+function panZoom(svg,start,onTap){
+  let vb={...start};const apply=()=>svg.setAttribute('viewBox',`${vb.x} ${vb.y} ${vb.w} ${vb.h}`);
+  const pts=new Map();let st=null,moved=false,tapKey=null,startDist=0;
+  const upp=v=>{const r=svg.getBoundingClientRect();return Math.max(v.w/r.width,v.h/r.height)};
+  const toSvg=(cx,cy,v)=>{const r=svg.getBoundingClientRect(),u=upp(v),ox=(r.width-v.w/u)/2,oy=(r.height-v.h/u)/2;return{x:v.x+(cx-r.left-ox)*u,y:v.y+(cy-r.top-oy)*u}};
+  const clampW=w=>Math.min(start.w*1.1,Math.max(start.w/14,w));
+  function zoomAt(f,cx,cy,base){ // f: yeni_genişlik/eski_genişlik
+    const v=base||vb;let nw=clampW(v.w*f);f=nw/v.w;const nh=v.h*f;
+    const a=toSvg(cx,cy,v),r=svg.getBoundingClientRect(),u=upp(v)*f,ox=(r.width-nw/u)/2,oy=(r.height-nh/u)/2;
+    vb={x:a.x-(cx-r.left-ox)*u,y:a.y-(cy-r.top-oy)*u,w:nw,h:nh};apply();
+  }
+  svg.addEventListener('pointerdown',e=>{
+    pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(pts.size===1){moved=false;tapKey=e.target.dataset?.k||null;st={x:e.clientX,y:e.clientY,vb:{...vb}}}
+    else{moved=true;const [a,b]=[...pts.values()];startDist=Math.hypot(a.x-b.x,a.y-b.y);st={vb:{...vb},mx:(a.x+b.x)/2,my:(a.y+b.y)/2}}
+  });
+  svg.addEventListener('pointermove',e=>{
+    if(!pts.has(e.pointerId))return;pts.set(e.pointerId,{x:e.clientX,y:e.clientY});
+    if(pts.size===1){
+      const dx=e.clientX-st.x,dy=e.clientY-st.y;
+      if(!moved&&Math.hypot(dx,dy)<7)return;moved=true;
+      const u=upp(st.vb);vb={...st.vb,x:st.vb.x-dx*u,y:st.vb.y-dy*u};apply();
+    }else if(pts.size>=2){
+      const [a,b]=[...pts.values()];const d=Math.hypot(a.x-b.x,a.y-b.y);if(!startDist)return;
+      zoomAt(startDist/d,(a.x+b.x)/2,(a.y+b.y)/2,st.vb);
+    }
+  });
+  const end=e=>{
+    if(!pts.has(e.pointerId))return;pts.delete(e.pointerId);
+    if(pts.size===0){if(!moved&&e.type==='pointerup'&&tapKey)onTap(tapKey);st=null}
+    else if(pts.size===1){const [p]=[...pts.values()];st={x:p.x,y:p.y,vb:{...vb}};moved=true}
+  };
+  svg.addEventListener('pointerup',end);svg.addEventListener('pointercancel',end);svg.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse')end(e)});
+  svg.addEventListener('wheel',e=>{e.preventDefault();zoomAt(e.deltaY>0?1.15:1/1.15,e.clientX,e.clientY)},{passive:false});
+  return{zoom(f){
+    const r=svg.getBoundingClientRect();
+    if(f===0){vb={...start};apply();return}
+    zoomAt(1/f,r.left+r.width/2,r.top+r.height/2);
+  }};
+}
+
+/* ---------- EXCEL (bağımlılıksız .xlsx üretici) ---------- */
+const CRC=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})();
+const crc32=b=>{let c=0xFFFFFFFF;for(let i=0;i<b.length;i++)c=CRC[(c^b[i])&255]^(c>>>8);return(c^0xFFFFFFFF)>>>0};
+function zipStore(files){
+  const enc=new TextEncoder(),chunks=[],central=[];let off=0;
+  const u16=n=>[n&255,(n>>8)&255],u32=n=>[n&255,(n>>8)&255,(n>>16)&255,(n>>>24)&255];
+  for(const f of files){
+    const nb=enc.encode(f.name),data=typeof f.data==='string'?enc.encode(f.data):f.data,crc=crc32(data);
+    const lh=new Uint8Array([0x50,0x4b,3,4,...u16(20),...u16(0x0800),...u16(0),...u16(0),...u16(0x21),...u32(crc),...u32(data.length),...u32(data.length),...u16(nb.length),...u16(0)]);
+    chunks.push(lh,nb,data);
+    central.push(new Uint8Array([0x50,0x4b,1,2,...u16(20),...u16(20),...u16(0x0800),...u16(0),...u16(0),...u16(0x21),...u32(crc),...u32(data.length),...u32(data.length),...u16(nb.length),...u16(0),...u16(0),...u16(0),...u16(0),...u32(0),...u32(off)]),nb);
+    off+=lh.length+nb.length+data.length;
+  }
+  let cs=0;for(const c of central)cs+=c.length;
+  const end=new Uint8Array([0x50,0x4b,5,6,0,0,0,0,...u16(files.length),...u16(files.length),...u32(cs),...u32(off),0,0]);
+  return new Blob([...chunks,...central,end],{type:'application/zip'});
+}
+const xe=s=>String(s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])).replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f]/g,'');
+const colL=n=>String.fromCharCode(64+n);
+function buildXlsx(){
+  const NAVY='FF1B365D',ACC='FFC25B3D',LIGHT='FFF4F6F9';
+  const styles=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+<fonts count="4"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font><font><b/><sz val="11"/><color rgb="${ACC}"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font></fonts>
+<fills count="4"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="${NAVY}"/></patternFill></fill><fill><patternFill patternType="solid"><fgColor rgb="${LIGHT}"/></patternFill></fill></fills>
+<borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>
+<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
+<cellXfs count="9">
+<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>
+<xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/>
+<xf numFmtId="0" fontId="2" fillId="3" borderId="0" xfId="0" applyFont="1" applyFill="1"/>
+<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>
+<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyAlignment="1"><alignment vertical="center" wrapText="1"/></xf>
+<xf numFmtId="9" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>
+<xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="center"/></xf>
+<xf numFmtId="0" fontId="3" fillId="0" borderId="0" xfId="0" applyFont="1"/>
+<xf numFmtId="9" fontId="3" fillId="0" borderId="0" xfId="0" applyNumberFormat="1" applyFont="1"/>
+</cellXfs></styleSheet>`;
+  const T=(r,c,t,s)=>`<c r="${colL(c)}${r}"${s?` s="${s}"`:''} t="inlineStr"><is><t xml:space="preserve">${xe(t)}</t></is></c>`;
+  const E=(r,c,s)=>`<c r="${colL(c)}${r}" s="${s}"/>`;
+  const F=(r,c,f,v,s,str)=>`<c r="${colL(c)}${r}"${s?` s="${s}"`:''}${str?' t="str"':''}><f>${xe(f)}</f><v>${xe(v)}</v></c>`;
+  // Sayfa 1
+  let rows=`<row r="1">${T(1,1,'Yer',6)}${T(1,2,'Gittim ✓',6)}${T(1,3,'Not',6)}</row>`;
+  let r=2;const ranges=[];
+  for(const c of S.cities){
+    const cr=r,first=cr+1;let n=0;for(const k of c.cats)n+=1+k.items.length;
+    const last=cr+n,st=stats(c),val=`${st.d} / ${st.t}`;
+    rows+=`<row r="${cr}">${T(cr,1,c.name,1)}${n>0?F(cr,2,`COUNTIF(B${first}:B${last},"☑")&" / "&(COUNTIF(B${first}:B${last},"☑")+COUNTIF(B${first}:B${last},"☐"))`,val,1,true):T(cr,2,val,1)}${E(cr,3,1)}</row>`;
+    r++;
+    for(const k of c.cats){
+      rows+=`<row r="${r}">${T(r,1,k.name,2)}${E(r,2,2)}${E(r,3,2)}</row>`;r++;
+      for(const i of k.items){
+        rows+=`<row r="${r}">${T(r,1,i.n,4)}${T(r,2,i.d?'☑':'☐',3)}${i.note?T(r,3,i.note,4):''}</row>`;r++;
+      }
+    }
+    ranges.push({c,first,last,n,st});
+  }
+  const sheet1=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols><col min="1" max="1" width="62" customWidth="1"/><col min="2" max="2" width="13" customWidth="1"/><col min="3" max="3" width="42" customWidth="1"/></cols><sheetData>${rows}</sheetData></worksheet>`;
+  // Sayfa 2
+  let o=`<row r="1">${['Şehir','Toplam yer','Gezilen','Kalan','İlerleme'].map((h,i)=>T(1,i+1,h,6)).join('')}</row>`;
+  let tt=0,td=0;
+  ranges.forEach((x,idx)=>{
+    const rr=idx+2,rg=`'Gezi Listesi'!$B$${x.first}:$B$${x.last}`;
+    const t=x.st.t,d=x.st.d;tt+=t;td+=d;
+    o+=`<row r="${rr}">${T(rr,1,x.c.name)}${x.n>0?F(rr,2,`COUNTIF(${rg},"☑")+COUNTIF(${rg},"☐")`,t):`<c r="B${rr}"><v>0</v></c>`}${x.n>0?F(rr,3,`COUNTIF(${rg},"☑")`,d):`<c r="C${rr}"><v>0</v></c>`}${F(rr,4,`B${rr}-C${rr}`,t-d)}${F(rr,5,`IF(B${rr}=0,0,C${rr}/B${rr})`,t?d/t:0,5)}</row>`;
+  });
+  const n2=ranges.length+1,tr=n2+1;
+  o+=`<row r="${tr}">${T(tr,1,'TOPLAM',7)}${F(tr,2,`SUM(B2:B${n2})`,tt,7)}${F(tr,3,`SUM(C2:C${n2})`,td,7)}${F(tr,4,`SUM(D2:D${n2})`,tt-td,7)}${F(tr,5,`IF(B${tr}=0,0,C${tr}/B${tr})`,tt?td/tt:0,8)}</row>`;
+  const sheet2=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols><col min="1" max="1" width="34" customWidth="1"/><col min="2" max="5" width="13" customWidth="1"/></cols><sheetData>${o}</sheetData></worksheet>`;
+  const ct=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/worksheets/sheet2.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>`;
+  const rels=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`;
+  const wb=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Gezi Listesi" sheetId="1" r:id="rId1"/><sheet name="Özet" sheetId="2" r:id="rId2"/></sheets><calcPr calcId="191029" fullCalcOnLoad="1"/></workbook>`;
+  const wrels=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet2.xml"/><Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`;
+  const z=zipStore([{name:'[Content_Types].xml',data:ct},{name:'_rels/.rels',data:rels},{name:'xl/workbook.xml',data:wb},{name:'xl/_rels/workbook.xml.rels',data:wrels},{name:'xl/styles.xml',data:styles},{name:'xl/worksheets/sheet1.xml',data:sheet1},{name:'xl/worksheets/sheet2.xml',data:sheet2}]);
+  return new Blob([z],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+}
+const stamp=()=>new Date().toISOString().slice(0,10);
+function download(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500)}
+async function sendExcel(){
+  closeSheet();
+  let blob;try{blob=buildXlsx()}catch(e){toast('Excel oluşturulamadı: '+e.message);return}
+  const name=`Turkiye_Gezi_Rehberi_${stamp()}.xlsx`;
+  try{
+    const f=new File([blob],name,{type:blob.type});
+    if(navigator.canShare&&navigator.canShare({files:[f]})){
+      await navigator.share({files:[f],title:'Türkiye Gezi Rehberi',text:'Gezi listem ektedir.'});return;
+    }
+  }catch(e){if(e&&e.name==='AbortError')return}
+  download(blob,name);toast('Excel indirildi. Mail uygulamasında ek olarak ekleyebilirsin.');
+}
+function menu(){
+  const s=sheet(`<h2>Menü</h2>
+  <button class="menuitem" id="m_send"><span style="font-size:22px">✉️</span><span>Excel olarak gönder / mail at<small>Paylaş menüsü açılır; Mail, WhatsApp, Drive…</small></span></button>
+  <button class="menuitem" id="m_dl"><span style="font-size:22px">⬇️</span><span>Excel dosyasını indir<small>.xlsx (Gezi Listesi + Özet sayfaları)</small></span></button>
+  <button class="menuitem" id="m_bk"><span style="font-size:22px">💾</span><span>Yedek al (JSON)<small>Telefon değiştirirsen veya veriyi temizlersen işine yarar</small></span></button>
+  <button class="menuitem" id="m_rs"><span style="font-size:22px">📂</span><span>Yedekten geri yükle</span></button>
+  <button class="menuitem" id="m_reset"><span style="font-size:22px">♻️</span><span>Başlangıç listesine dön<small>Yaptığın tüm değişiklikler silinir</small></span></button>
+  <input type="file" id="m_file" accept="application/json,.json" style="display:none">`);
+  $('#m_send',s).onclick=sendExcel;
+  $('#m_dl',s).onclick=()=>{closeSheet();download(buildXlsx(),`Turkiye_Gezi_Rehberi_${stamp()}.xlsx`);toast('Excel indirildi')};
+  $('#m_bk',s).onclick=()=>{closeSheet();download(new Blob([JSON.stringify(S)],{type:'application/json'}),`gezi-yedek-${stamp()}.json`)};
+  $('#m_rs',s).onclick=()=>$('#m_file',s).click();
+  $('#m_file',s).onchange=async e=>{
+    const f=e.target.files[0];if(!f)return;
+    try{const o=JSON.parse(await f.text());if(!o||!Array.isArray(o.cities))throw 0;S=o;save();closeSheet();setTab(tab);updateHeader();toast('Yedek yüklendi')}catch(x){toast('Geçersiz yedek dosyası')}
+  };
+  $('#m_reset',s).onclick=()=>{if(confirm('Tüm değişiklikler silinip ilk liste yüklensin mi?')){S=fresh();save();closeSheet();setTab(tab);updateHeader()}};
+}
+$('#menuBtn').addEventListener('click',menu);
+
+/* ---------- başlat ---------- */
+load();updateHeader();syncHH();setTab('harita');
+if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost')){
+  addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+}
+</script>
+</body>
+</html>
